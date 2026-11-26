@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>今天吃什么 · 大转盘 / 抽签器</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --surface: #f1f3f9;
+      --border: #e2e6f0;
+      --fg: #181c27;
+      --muted: #646e82;
+      --placeholder: #98a1b3;
+      --primary: #f97316;
+      --primary-hover: #ea580c;
+      --primary-fg: #ffffff;
+      --danger: #ef4444;
+      --shadow: 0 12px 32px rgba(24, 28, 39, 0.08);
+      --chart-1: #f97316;
+      --chart-2: #0ea5e9;
+      --chart-3: #10b981;
+      --chart-4: #8b5cf6;
+      --chart-5: #ec4899;
+      --chart-6: #eab308;
+    }
+
+    [data-theme="dark"] {
+      --bg: #0f1219;
+      --card: #171c26;
+      --surface: #202736;
+      --border: #2c3548;
+      --fg: #f1f5f9;
+      --muted: #94a3b8;
+      --placeholder: #64748b;
+      --primary: #fb923c;
+      --primary-hover: #f97316;
+      --primary-fg: #111827;
+      --danger: #f87171;
+      --shadow: 0 14px 36px rgba(0, 0, 0, 0.35);
+      --chart-1: #fb923c;
+      --chart-2: #38bdf8;
+      --chart-3: #34d399;
+      --chart-4: #a78bfa;
+      --chart-5: #f472b6;
+      --chart-6: #facc15;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 16px;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 780px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 20px 24px 22px;
+    }
+
+    .header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-sub {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .segmented {
+      display: inline-flex;
+      padding: 3px;
+      border-radius: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+
+    .seg-btn {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .seg-btn:hover {
+      color: var(--fg);
+    }
+
+    .seg-btn.active {
+      background: var(--primary);
+      color: var(--primary-fg);
+    }
+
+    .icon-btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--fg);
+      border-radius: 9px;
+      padding: 5px 9px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: border-color 0.15s ease;
+    }
+
+    .icon-btn:hover {
+      border-color: var(--primary);
+    }
+
+    .presets-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      margin-top: 14px;
+      font-size: 12px;
+    }
+
+    .presets-label {
+      color: var(--muted);
+      margin-right: 2px;
+    }
+
+    .preset-btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--fg);
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: border-color 0.15s ease, transform 0.1s ease;
+    }
+
+    .preset-btn:hover:not(:disabled) {
+      border-color: var(--primary);
+    }
+
+    .preset-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 24px;
+      margin-top: 18px;
+      align-items: start;
+    }
+
+    @media (max-width: 680px) {
+      .app {
+        padding: 16px;
+      }
+      .main-grid {
+        grid-template-columns: 1fr;
+        gap: 18px;
+      }
+    }
+
+    /* Left Stage */
+    .stage-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .stage-wrap {
+      position: relative;
+      width: 264px;
+      height: 264px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+
+    .confetti-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: visible;
+      z-index: 30;
+    }
+
+    .wheel-stage {
+      position: relative;
+      width: 260px;
+      height: 260px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .wheel-pointer {
+      position: absolute;
+      top: -4px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.2));
+      pointer-events: none;
+    }
+
+    .wheel-ring {
+      width: 250px;
+      height: 250px;
+      border-radius: 50%;
+      padding: 5px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .wheel-rotor {
+      width: 100%;
+      height: 100%;
+      transition: transform 3.6s cubic-bezier(0.14, 0.86, 0.2, 1);
+      will-change: transform;
+    }
+
+    .wheel-center-btn {
+      position: absolute;
+      z-index: 10;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: var(--card);
+      border: 3px solid var(--primary);
+      color: var(--fg);
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .wheel-center-btn:hover:not(:disabled) {
+      transform: scale(1.06);
+    }
+
+    .wheel-center-btn:active:not(:disabled) {
+      transform: scale(0.95);
+    }
+
+    .wheel-center-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .slice-label {
+      fill: #ffffff;
+      font-weight: 600;
+      paint-order: stroke;
+      stroke: rgba(0, 0, 0, 0.34);
+      stroke-width: 2.6px;
+      stroke-linejoin: round;
+      user-select: none;
+    }
+
+    /* Lots Stage */
+    .lots-stage {
+      position: relative;
+      width: 260px;
+      height: 260px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 10px;
+    }
+
+    .drawn-stick-wrap {
+      position: absolute;
+      top: 6px;
+      left: 12px;
+      right: 12px;
+      z-index: 20;
+      display: flex;
+      justify-content: center;
+    }
+
+    .drawn-stick-card {
+      width: 100%;
+      max-width: 214px;
+      background: var(--card);
+      border: 2px solid var(--primary);
+      border-radius: 14px;
+      padding: 10px 14px;
+      text-align: center;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    .drawn-fortune-tag {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .drawn-food-name {
+      margin-top: 3px;
+      font-size: 17px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .lot-cup {
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    .lot-cup:hover {
+      transform: scale(1.03);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Result + Primary Button */
+    .stage-footer {
+      width: 100%;
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .result-banner {
+      min-height: 42px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .result-text {
+      color: var(--muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .result-text strong {
+      color: var(--fg);
+      font-size: 15px;
+    }
+
+    .exclude-btn {
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--fg);
+      border-radius: 7px;
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: border-color 0.15s ease;
+    }
+
+    .exclude-btn:hover {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .spin-btn {
+      width: 100%;
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      background: var(--primary);
+      color: var(--primary-fg);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.1s ease, opacity 0.15s ease;
+    }
+
+    .spin-btn:hover:not(:disabled) {
+      background: var(--primary-hover);
+    }
+
+    .spin-btn:active:not(:disabled) {
+      transform: scale(0.99);
+    }
+
+    .spin-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Right Options Editor */
+    .editor-col {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .add-form {
+      display: flex;
+      gap: 8px;
+    }
+
+    .add-input {
+      flex: 1;
+      min-width: 0;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--fg);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    .add-input::placeholder {
+      color: var(--placeholder);
+    }
+
+    .add-input:focus {
+      border-color: var(--primary);
+    }
+
+    .add-btn {
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--fg);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color 0.15s ease;
+    }
+
+    .add-btn:hover:not(:disabled) {
+      border-color: var(--primary);
+    }
+
+    .add-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .meta-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .meta-bar strong {
+      color: var(--fg);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .meta-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .text-btn {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .text-btn:hover:not(:disabled) {
+      color: var(--fg);
+    }
+
+    .text-btn.danger:hover:not(:disabled) {
+      color: var(--danger);
+    }
+
+    .text-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .options-box {
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      gap: 7px;
+      min-height: 170px;
+      max-height: 230px;
+      overflow-y: auto;
+      padding: 10px;
+      border-radius: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 6px 5px 9px;
+      border-radius: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--fg);
+      transition: border-color 0.15s ease;
+    }
+
+    .chip.winner {
+      border-color: var(--primary);
+      font-weight: 600;
+    }
+
+    .chip-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .chip-label {
+      max-width: 130px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .chip-del {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      font-size: 14px;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .chip-del:hover:not(:disabled) {
+      color: var(--danger);
+      background: var(--surface);
+    }
+
+    .chip-del:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .empty-msg {
+      width: 100%;
+      padding: 46px 12px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .history-footer {
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      min-height: 30px;
+    }
+
+    .history-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .history-pill {
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+
+    .history-pill.latest {
+      color: var(--fg);
+      font-weight: 600;
+    }
+
+    /* Animations */
+    @keyframes pointer-bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0) scale(1); }
+      40% { transform: translateX(-50%) translateY(3px) scale(1.08); }
+    }
+    .pointer-hit {
+      animation: pointer-bounce 0.35s ease-out;
+    }
+
+    @keyframes cup-shake {
+      0%, 100% { transform: rotate(0deg) translate(0, 0); }
+      15% { transform: rotate(-10deg) translate(-4px, -3px); }
+      30% { transform: rotate(10deg) translate(4px, -5px); }
+      45% { transform: rotate(-8deg) translate(-3px, -2px); }
+      60% { transform: rotate(9deg) translate(3px, -4px); }
+      75% { transform: rotate(-6deg) translate(-2px, -1px); }
+      90% { transform: rotate(5deg) translate(2px, -2px); }
+    }
+    .shaking {
+      animation: cup-shake 0.42s ease-in-out infinite;
+      transform-origin: 50% 80%;
+    }
+
+    @keyframes stick-rise {
+      0% { transform: translateY(34px) scale(0.92); opacity: 0; }
+      65% { transform: translateY(-6px) scale(1.03); opacity: 1; }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    .stick-pop {
+      animation: stick-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes result-pop {
+      0% { transform: scale(0.94); opacity: 0.5; }
+      60% { transform: scale(1.02); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .result-pop {
+      animation: result-pop 0.35s ease-out;
+    }
+
+    @keyframes confetti-fall {
+      0% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+      100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(0.5); opacity: 0; }
+    }
+    .confetti-dot {
+      position: absolute;
+      width: 7px;
+      height: 7px;
+      border-radius: 2px;
+      pointer-events: none;
+      animation: confetti-fall 0.85s cubic-bezier(0.18, 0.89, 0.32, 1) forwards;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="header">
+      <div class="brand">
+        <div>
+          <h1>今天吃什么</h1>
+          <div class="brand-sub">大转盘 &amp; 抽签器 · 专治选择困难症</div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="segmented" role="tablist">
+          <button id="tab-wheel" type="button" role="tab" aria-selected="true" class="seg-btn active">大转盘</button>
+          <button id="tab-lots" type="button" role="tab" aria-selected="false" class="seg-btn">抽签器</button>
+        </div>
+        <button id="sound-toggle" type="button" class="icon-btn" title="关闭音效" aria-label="切换音效">🔊</button>
+        <button id="theme-toggle" type="button" class="icon-btn" title="切换浅色/深色主题" aria-label="切换主题">🌓</button>
+      </div>
+    </header>
+
+    <div class="presets-row">
+      <span class="presets-label">快速预设：</span>
+      <button data-preset="lunch" type="button" class="preset-btn">工作餐</button>
+      <button data-preset="dinner" type="button" class="preset-btn">朋友聚餐</button>
+      <button data-preset="night" type="button" class="preset-btn">夜宵解馋</button>
+      <button data-preset="tea" type="button" class="preset-btn">下午茶</button>
+    </div>
+
+    <div class="main-grid">
+      <!-- Left: Wheel / Lots Stage -->
+      <section class="stage-col">
+        <div class="stage-wrap">
+          <div id="confetti-layer" class="confetti-layer"></div>
+
+          <!-- Wheel -->
+          <div id="wheel-stage" class="wheel-stage">
+            <div id="wheel-pointer" class="wheel-pointer">
+              <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 22 L3 5 Q12 8 21 5 Z" fill="var(--primary)" stroke="var(--card)" stroke-width="2" stroke-linejoin="round" />
+              </svg>
+            </div>
+
+            <div class="wheel-ring">
+              <svg id="wheel-svg" class="wheel-rotor" viewBox="0 0 240 240" aria-label="美食大转盘"></svg>
+            </div>
+
+            <button id="wheel-center-btn" type="button" class="wheel-center-btn">
+              <span id="center-btn-text">开始</span>
+            </button>
+          </div>
+
+          <!-- Fortune Stick Drawer -->
+          <div id="lots-stage" class="lots-stage hidden">
+            <div id="drawn-stick-wrap" class="drawn-stick-wrap hidden">
+              <div id="drawn-stick-card" class="drawn-stick-card stick-pop">
+                <div id="drawn-fortune-tag" class="drawn-fortune-tag">上上签 · 就吃它</div>
+                <div id="drawn-food-name" class="drawn-food-name">黄焖鸡米饭</div>
+              </div>
+            </div>
+
+            <div id="lot-cup" class="lot-cup" title="点击摇一摇抽签">
+              <svg width="172" height="182" viewBox="0 0 160 170" aria-label="美食抽签筒">
+                <g>
+                  <rect x="48" y="24" width="10" height="68" rx="4" transform="rotate(-14 53 60)" fill="var(--chart-1)" stroke="var(--border)" stroke-width="1" />
+                  <rect x="62" y="16" width="10" height="74" rx="4" transform="rotate(-6 67 56)" fill="var(--chart-2)" stroke="var(--border)" stroke-width="1" />
+                  <rect x="76" y="14" width="10" height="76" rx="4" transform="rotate(2 81 56)" fill="var(--chart-3)" stroke="var(--border)" stroke-width="1" />
+                  <rect x="90" y="18" width="10" height="72" rx="4" transform="rotate(9 95 56)" fill="var(--chart-4)" stroke="var(--border)" stroke-width="1" />
+                  <rect x="102" y="26" width="10" height="66" rx="4" transform="rotate(16 107 60)" fill="var(--chart-5)" stroke="var(--border)" stroke-width="1" />
+                </g>
+                <path d="M38 66 L122 66 L112 154 Q111 162 102 162 L58 162 Q49 162 48 154 Z" fill="var(--card)" stroke="var(--border)" stroke-width="2" />
+                <ellipse cx="80" cy="66" rx="42" ry="9" fill="var(--surface)" stroke="var(--border)" stroke-width="2" />
+                <rect x="61" y="92" width="38" height="46" rx="6" fill="var(--primary)" opacity="0.14" stroke="var(--primary)" stroke-width="1.5" />
+                <text x="80" y="111" text-anchor="middle" fill="var(--primary)" font-size="14" font-weight="700">吃</text>
+                <text x="80" y="129" text-anchor="middle" fill="var(--primary)" font-size="14" font-weight="700">啥</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="stage-footer">
+          <div id="result-banner" class="result-banner">
+            <span id="result-text" class="result-text">点击开始，交给命运决定！</span>
+            <button id="exclude-btn" type="button" class="exclude-btn hidden" title="从列表中移除该选项并重新抽取">排除再抽</button>
+          </div>
+          <button id="spin-btn" type="button" class="spin-btn">转起来！决定今天吃什么</button>
+        </div>
+      </section>
+
+      <!-- Right: Custom Options Editor -->
+      <section class="editor-col">
+        <form id="add-form" class="add-form">
+          <input id="option-input" class="add-input" type="text" maxlength="80" placeholder="添加美食（支持逗号或空格批量输入）" />
+          <button id="add-btn" type="submit" class="add-btn">添加</button>
+        </form>
+
+        <div class="meta-bar">
+          <span>当前候选 <strong id="option-count">0</strong> 项</span>
+          <div class="meta-actions">
+            <button id="shuffle-btn" type="button" class="text-btn">打乱顺序</button>
+            <button id="clear-btn" type="button" class="text-btn danger">清空</button>
+          </div>
+        </div>
+
+        <div id="options-list" class="options-box"></div>
+
+        <div class="history-footer">
+          <div id="history-bar" class="history-bar">
+            <span>小贴士：按空格键可快速开始</span>
+          </div>
+          <button id="clear-history-btn" type="button" class="text-btn hidden">清除记录</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      const PRESETS = {
+        lunch: ['黄焖鸡米饭', '兰州拉面', '隆江猪脚饭', '轻食沙拉', '麻辣烫', '酸菜鱼', '番茄炒蛋盖饭', '汉堡薯条'],
+        dinner: ['四川火锅', '日式烤肉', '湘菜馆', '椰子鸡', '泰式冬阴功', '粤式茶餐厅', '东北铁锅炖'],
+        night: ['烧烤串串', '麻辣小龙虾', '柳州螺蛳粉', '炸鸡配可乐', '广东肠粉', '干炒牛河'],
+        tea: ['珍珠奶茶', '生椰拿铁', '手打柠檬茶', '杨枝甘露', '抹茶拿铁', '芝士葡萄']
+      };
+
+      const FORTUNE_TAGS = [
+        '上上签 · 就吃它！',
+        '大吉 · 今日天选',
+        '绝佳签 · 别犹豫了',
+        '干饭签 · 冲就完事',
+        '好运签 · 美味不踩雷'
+      ];
+
+      const CHART_COLORS = [
+        'var(--chart-1)',
+        'var(--chart-2)',
+        'var(--chart-3)',
+        'var(--chart-4)',
+        'var(--chart-5)',
+        'var(--chart-6)'
+      ];
+
+      const STORAGE_KEY = 'what_to_eat_options_v1';
+      const THEME_KEY = 'what_to_eat_theme_v1';
+
+      let mode = 'wheel';
+      let options = loadSavedOptions() || [...PRESETS.lunch];
+      let history = [];
+      let currentRotation = 0;
+      let isSpinning = false;
+      let lastWinner = null;
+      let soundEnabled = true;
+      let spinToken = 0;
+      let audioCtx = null;
+
+      // DOM refs
+      const tabWheel = document.getElementById('tab-wheel');
+      const tabLots = document.getElementById('tab-lots');
+      const wheelStage = document.getElementById('wheel-stage');
+      const lotsStage = document.getElementById('lots-stage');
+      const wheelSvg = document.getElementById('wheel-svg');
+      const wheelPointer = document.getElementById('wheel-pointer');
+      const wheelCenterBtn = document.getElementById('wheel-center-btn');
+      const centerBtnText = document.getElementById('center-btn-text');
+      const lotCup = document.getElementById('lot-cup');
+      const drawnStickWrap = document.getElementById('drawn-stick-wrap');
+      const drawnStickCard = document.getElementById('drawn-stick-card');
+      const drawnFortuneTag = document.getElementById('drawn-fortune-tag');
+      const drawnFoodName = document.getElementById('drawn-food-name');
+      const spinBtn = document.getElementById('spin-btn');
+      const resultBanner = document.getElementById('result-banner');
+      const resultText = document.getElementById('result-text');
+      const excludeBtn = document.getElementById('exclude-btn');
+      const addForm = document.getElementById('add-form');
+      const optionInput = document.getElementById('option-input');
+      const addBtn = document.getElementById('add-btn');
+      const optionsList = document.getElementById('options-list');
+      const optionCount = document.getElementById('option-count');
+      const shuffleBtn = document.getElementById('shuffle-btn');
+      const clearBtn = document.getElementById('clear-btn');
+      const soundToggle = document.getElementById('sound-toggle');
+      const themeToggle = document.getElementById('theme-toggle');
+      const historyBar = document.getElementById('history-bar');
+      const clearHistoryBtn = document.getElementById('clear-history-btn');
+      const confettiLayer = document.getElementById('confetti-layer');
+
+      // Theme setup
+      function initTheme() {
+        let saved = null;
+        try { saved = localStorage.getItem(THEME_KEY); } catch (_) {}
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        applyTheme(saved || (prefersDark ? 'dark' : 'light'));
+      }
+
+      function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+        themeToggle.title = theme === 'dark' ? '切换到浅色模式' : '切换到深色模式';
+      }
+
+      themeToggle.addEventListener('click', () => {
+        const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        applyTheme(next);
+        try { localStorage.setItem(THEME_KEY, next); } catch (_) {}
+      });
+
+      function loadSavedOptions() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return null;
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.every(x => typeof x === 'string' && x.trim())) {
+            return parsed;
+          }
+        } catch (_) {}
+        return null;
+      }
+
+      function saveOptions() {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(options)); } catch (_) {}
+      }
+
+      function getSliceColor(index, total) {
+        if (total > 1 && index === total - 1 && index % CHART_COLORS.length === 0) {
+          return CHART_COLORS[2];
+        }
+        return CHART_COLORS[index % CHART_COLORS.length];
+      }
+
+      function playTone(freq, duration, type = 'sine', volume = 0.06, delay = 0) {
+        if (!soundEnabled) return;
+        try {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (!AudioCtx) return;
+          if (!audioCtx) audioCtx = new AudioCtx();
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+          const now = audioCtx.currentTime + delay;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(0.0001, now);
+          gain.gain.exponentialRampToValueAtTime(volume, now + 0.015);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + duration + 0.02);
+        } catch (_) {}
+      }
+
+      function playWinChime() {
+        playTone(523.25, 0.14, 'triangle', 0.07, 0);
+        playTone(659.25, 0.14, 'triangle', 0.07, 0.09);
+        playTone(783.99, 0.28, 'triangle', 0.08, 0.18);
+      }
+
+      function playStartClick() {
+        playTone(420, 0.07, 'sine', 0.05, 0);
+      }
+
+      function spawnConfetti() {
+        confettiLayer.innerHTML = '';
+        for (let i = 0; i < 18; i++) {
+          const dot = document.createElement('span');
+          dot.className = 'confetti-dot';
+          const angle = (Math.PI * 2 * i) / 18 + (Math.random() - 0.5) * 0.3;
+          const dist = 55 + Math.random() * 68;
+          dot.style.left = '50%';
+          dot.style.top = '45%';
+          dot.style.background = CHART_COLORS[i % CHART_COLORS.length];
+          dot.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
+          dot.style.setProperty('--dy', `${Math.sin(angle) * dist - 15}px`);
+          dot.style.setProperty('--rot', `${(Math.random() - 0.5) * 360}deg`);
+          confettiLayer.appendChild(dot);
+        }
+        setTimeout(() => { confettiLayer.innerHTML = ''; }, 900);
+      }
+
+      function truncateLabel(text, maxLen) {
+        return text.length > maxLen ? text.slice(0, maxLen - 1) + '…' : text;
+      }
+
+      function escapeHtml(str) {
+        return str
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function renderWheel() {
+        const cx = 120;
+        const cy = 120;
+        const r = 112;
+        const n = options.length;
+
+        if (n === 0) {
+          wheelSvg.innerHTML = `
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="var(--surface)" stroke="var(--border)" stroke-width="2" stroke-dasharray="6 5" />
+            <text x="${cx}" y="${cy - 36}" text-anchor="middle" fill="var(--muted)" font-size="12">请先添加选项</text>
+          `;
+          return;
+        }
+
+        if (n === 1) {
+          wheelSvg.innerHTML = `
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="${CHART_COLORS[0]}" />
+            <text x="${cx}" y="${cy - 52}" text-anchor="middle" dominant-baseline="central" class="slice-label" font-size="14">${escapeHtml(truncateLabel(options[0], 9))}</text>
+          `;
+          return;
+        }
+
+        const sliceAngle = 360 / n;
+        const fontSize = n <= 6 ? 13 : n <= 10 ? 12 : 11;
+        const maxChars = n <= 8 ? 6 : 5;
+        const svgParts = [];
+
+        for (let i = 0; i < n; i++) {
+          const startDeg = i * sliceAngle;
+          const endDeg = (i + 1) * sliceAngle;
+          const startRad = ((startDeg - 90) * Math.PI) / 180;
+          const endRad = ((endDeg - 90) * Math.PI) / 180;
+
+          const x1 = cx + r * Math.cos(startRad);
+          const y1 = cy + r * Math.sin(startRad);
+          const x2 = cx + r * Math.cos(endRad);
+          const y2 = cy + r * Math.sin(endRad);
+          const largeArc = sliceAngle > 180 ? 1 : 0;
+          const fill = getSliceColor(i, n);
+
+          svgParts.push(
+            `<path d="M ${cx} ${cy} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z" fill="${fill}" stroke="var(--card)" stroke-width="1.5" />`
+          );
+
+          const midDeg = startDeg + sliceAngle / 2;
+          const textRadius = n <= 4 ? r * 0.58 : r * 0.65;
+          const label = escapeHtml(truncateLabel(options[i], maxChars));
+
+          svgParts.push(
+            `<text x="${(cx + textRadius).toFixed(2)}" y="${cy}" text-anchor="middle" dominant-baseline="central" class="slice-label" font-size="${fontSize}" transform="rotate(${(midDeg - 90).toFixed(2)} ${cx} ${cy})">${label}</text>`
+          );
+        }
+
+        wheelSvg.innerHTML = svgParts.join('');
+      }
+
+      function renderOptions() {
+        optionCount.textContent = String(options.length);
+        const disabled = isSpinning;
+
+        if (options.length === 0) {
+          optionsList.innerHTML = '<div class="empty-msg">列表为空，输入你想吃的美食或点上方预设快速填充</div>';
+        } else {
+          optionsList.innerHTML = options.map((item, idx) => {
+            const color = getSliceColor(idx, options.length);
+            const isWin = lastWinner === item;
+            return `
+              <span class="chip ${isWin ? 'winner' : ''}">
+                <span class="chip-dot" style="background:${color}"></span>
+                <span class="chip-label" title="${escapeHtml(item)}">${escapeHtml(item)}</span>
+                <button type="button" class="chip-del" data-remove="${idx}" ${disabled ? 'disabled' : ''} aria-label="删除 ${escapeHtml(item)}">×</button>
+              </span>
+            `;
+          }).join('');
+        }
+
+        const hasOptions = options.length > 0;
+        spinBtn.disabled = isSpinning || !hasOptions;
+        wheelCenterBtn.disabled = isSpinning || !hasOptions;
+        addBtn.disabled = isSpinning;
+        optionInput.disabled = isSpinning;
+        shuffleBtn.disabled = isSpinning || options.length < 2;
+        clearBtn.disabled = isSpinning || !hasOptions;
+        document.querySelectorAll('.preset-btn').forEach(b => { b.disabled = isSpinning; });
+
+        updateButtonLabels();
+        renderWheel();
+      }
+
+      function updateButtonLabels() {
+        if (isSpinning) {
+          spinBtn.textContent = mode === 'wheel' ? '大转盘旋转中...' : '正在摇签中...';
+          centerBtnText.textContent = '...';
+        } else if (options.length === 0) {
+          spinBtn.textContent = '请先添加美食选项';
+          centerBtnText.textContent = '空';
+        } else {
+          spinBtn.textContent = mode === 'wheel' ? '转起来！决定今天吃什么' : '摇一摇！抽取美食签';
+          centerBtnText.textContent = '开始';
+        }
+      }
+
+      function renderHistory() {
+        if (history.length === 0) {
+          historyBar.innerHTML = '<span>小贴士：按空格键可快速开始</span>';
+          clearHistoryBtn.classList.add('hidden');
+          return;
+        }
+        clearHistoryBtn.classList.remove('hidden');
+        historyBar.innerHTML =
+          '<span>最近：</span>' +
+          history.map((h, i) => `<span class="history-pill ${i === 0 ? 'latest' : ''}">${escapeHtml(h)}</span>`).join('');
+      }
+
+      function setMode(nextMode) {
+        if (isSpinning || mode === nextMode) return;
+        mode = nextMode;
+        const isWheel = mode === 'wheel';
+        tabWheel.classList.toggle('active', isWheel);
+        tabLots.classList.toggle('active', !isWheel);
+        tabWheel.setAttribute('aria-selected', String(isWheel));
+        tabLots.setAttribute('aria-selected', String(!isWheel));
+
+        wheelStage.classList.toggle('hidden', !isWheel);
+        lotsStage.classList.toggle('hidden', isWheel);
+        if (!isWheel && lastWinner && options.includes(lastWinner)) {
+          drawnFoodName.textContent = lastWinner;
+          drawnStickWrap.classList.remove('hidden');
+        } else if (!isWheel) {
+          drawnStickWrap.classList.add('hidden');
+        }
+        updateButtonLabels();
+      }
+
+      function showWinner(winner) {
+        lastWinner = winner;
+        history = [winner, ...history].slice(0, 5);
+        renderHistory();
+
+        resultText.innerHTML = `今天吃：<strong>${escapeHtml(winner)}</strong>`;
+        resultBanner.classList.remove('result-pop');
+        void resultBanner.offsetWidth;
+        resultBanner.classList.add('result-pop');
+
+        excludeBtn.classList.toggle('hidden', options.length <= 1);
+        playWinChime();
+        spawnConfetti();
+        renderOptions();
+      }
+
+      function startSpin() {
+        if (isSpinning || options.length === 0) return;
+        isSpinning = true;
+        const myToken = ++spinToken;
+        playStartClick();
+        excludeBtn.classList.add('hidden');
+        resultText.textContent = mode === 'wheel' ? '命运之轮转动中...' : '正在用力摇签筒...';
+        renderOptions();
+
+        const winIndex = Math.floor(Math.random() * options.length);
+        const winner = options[winIndex];
+
+        if (mode === 'wheel') {
+          const n = options.length;
+          const sliceAngle = 360 / n;
+          const targetWheelAngle = (winIndex + 0.2 + Math.random() * 0.6) * sliceAngle;
+          const desiredMod = (360 - (targetWheelAngle % 360)) % 360;
+          const currentMod = ((currentRotation % 360) + 360) % 360;
+          const delta = (desiredMod - currentMod + 360) % 360;
+          const extraSpins = (5 + Math.floor(Math.random() * 3)) * 360;
+
+          currentRotation = currentRotation + extraSpins + delta;
+          wheelSvg.style.transform = `rotate(${currentRotation.toFixed(2)}deg)`;
+
+          let finished = false;
+          const finish = () => {
+            if (finished || myToken !== spinToken) return;
+            finished = true;
+            wheelSvg.removeEventListener('transitionend', onEnd);
+            isSpinning = false;
+            wheelPointer.classList.remove('pointer-hit');
+            void wheelPointer.offsetWidth;
+            wheelPointer.classList.add('pointer-hit');
+            showWinner(winner);
+          };
+
+          const onEnd = (e) => {
+            if (e.target === wheelSvg && e.propertyName === 'transform') finish();
+          };
+          wheelSvg.addEventListener('transitionend', onEnd);
+          setTimeout(finish, 3850);
+        } else {
+          drawnStickWrap.classList.add('hidden');
+          lotCup.classList.add('shaking');
+
+          playTone(300, 0.05, 'triangle', 0.04, 0.2);
+          playTone(340, 0.05, 'triangle', 0.04, 0.45);
+          playTone(310, 0.05, 'triangle', 0.04, 0.72);
+          playTone(360, 0.05, 'triangle', 0.04, 0.98);
+
+          setTimeout(() => {
+            if (myToken !== spinToken) return;
+            lotCup.classList.remove('shaking');
+            isSpinning = false;
+
+            drawnFortuneTag.textContent = FORTUNE_TAGS[Math.floor(Math.random() * FORTUNE_TAGS.length)];
+            drawnFoodName.textContent = winner;
+            drawnStickWrap.classList.remove('hidden');
+            drawnStickCard.classList.remove('stick-pop');
+            void drawnStickCard.offsetWidth;
+            drawnStickCard.classList.add('stick-pop');
+
+            showWinner(winner);
+          }, 1250);
+        }
+      }
+
+      tabWheel.addEventListener('click', () => setMode('wheel'));
+      tabLots.addEventListener('click', () => setMode('lots'));
+      spinBtn.addEventListener('click', startSpin);
+      wheelCenterBtn.addEventListener('click', startSpin);
+      lotCup.addEventListener('click', startSpin);
+
+      excludeBtn.addEventListener('click', () => {
+        if (isSpinning || !lastWinner) return;
+        const idx = options.indexOf(lastWinner);
+        if (idx !== -1) {
+          options.splice(idx, 1);
+          saveOptions();
+        }
+        lastWinner = null;
+        drawnStickWrap.classList.add('hidden');
+        renderOptions();
+        if (options.length > 0) startSpin();
+      });
+
+      addForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (isSpinning) return;
+        const raw = optionInput.value.trim();
+        if (!raw) return;
+
+        const parts = raw
+          .split(/[,，、;；\s]+/)
+          .map(s => s.trim())
+          .filter(Boolean)
+          .map(s => s.slice(0, 24));
+
+        let added = 0;
+        for (const item of parts) {
+          if (!options.includes(item) && options.length < 24) {
+            options.push(item);
+            added++;
+          }
+        }
+        if (added > 0) {
+          saveOptions();
+          renderOptions();
+        }
+        optionInput.value = '';
+        optionInput.focus();
+      });
+
+      optionsList.addEventListener('click', (e) => {
+        if (isSpinning) return;
+        const btn = e.target.closest('button[data-remove]');
+        if (!btn) return;
+        const idx = Number(btn.dataset.remove);
+        if (!Number.isNaN(idx) && idx >= 0 && idx < options.length) {
+          if (options[idx] === lastWinner) {
+            lastWinner = null;
+            excludeBtn.classList.add('hidden');
+          }
+          options.splice(idx, 1);
+          saveOptions();
+          renderOptions();
+        }
+      });
+
+      shuffleBtn.addEventListener('click', () => {
+        if (isSpinning || options.length < 2) return;
+        for (let i = options.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [options[i], options[j]] = [options[j], options[i]];
+        }
+        saveOptions();
+        renderOptions();
+      });
+
+      clearBtn.addEventListener('click', () => {
+        if (isSpinning || options.length === 0) return;
+        options = [];
+        lastWinner = null;
+        drawnStickWrap.classList.add('hidden');
+        excludeBtn.classList.add('hidden');
+        resultText.textContent = '列表已清空，添加新选项开始吧';
+        saveOptions();
+        renderOptions();
+      });
+
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (isSpinning) return;
+          const key = btn.dataset.preset;
+          if (!PRESETS[key]) return;
+          options = [...PRESETS[key]];
+          lastWinner = null;
+          drawnStickWrap.classList.add('hidden');
+          excludeBtn.classList.add('hidden');
+          resultText.textContent = '已切换预设，点击开始抽取！';
+          saveOptions();
+          renderOptions();
+        });
+      });
+
+      soundToggle.addEventListener('click', () => {
+        soundEnabled = !soundEnabled;
+        soundToggle.textContent = soundEnabled ? '🔊' : '🔇';
+        soundToggle.title = soundEnabled ? '关闭音效' : '开启音效';
+      });
+
+      clearHistoryBtn.addEventListener('click', () => {
+        history = [];
+        renderHistory();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && document.activeElement !== optionInput) {
+          e.preventDefault();
+          startSpin();
+        }
+      });
+
+      initTheme();
+      renderOptions();
+      renderHistory();
+    })();
+  </script>
+</body>
+</html>
